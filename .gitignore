@@ -1,2 +1,6 @@
 #backup files
 *~
+#the config file
+*.cfg
+#the pyc files
+*.pyc
