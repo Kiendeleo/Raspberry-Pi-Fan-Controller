@@ -1,3 +1,5 @@
+#!/bin/bash
+
 #This script makes the program autorun on startup, and This script must be
 #run with sudo.
 
@@ -6,6 +8,13 @@ if (( $EUID != 0 )); then
     echo "Error: install must be run as root."
     exit
 fi
+
+
+#download and install Adafruit's Python DHT Library
+mkdir /tmp/rpi-fan-controller
+wget -O /tmp/rpi-fan-controller/master.zip https://github.com/adafruit/Adafruit_Python_DHT/archive/master.zip
+unzip /tmp/rpi-fan-controller/master.zip -d /tmp/rpi-fan-controller/
+python /tmp/rpi-fan-controller/Adafruit_Python_DHT-master/setup.py install
 
 #make sure the file doesn't already exist
 if [ -e /lib/systemd/system/piFans.service ]; then
