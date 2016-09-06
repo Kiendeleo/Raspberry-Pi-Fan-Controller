@@ -1,0 +1,6 @@
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: fanController.py
+Upstream-Contact: Andrew Beeman, <support@kiendeleo.com>>
+Files: *
+Copyright: 2016, Kiendeleo LLC, <support@kiendeleo.com>
+License: Apache 2.0

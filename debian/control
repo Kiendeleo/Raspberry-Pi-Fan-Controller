@@ -1,0 +1,18 @@
+Source: Raspberry-Pi-Fan-Controller
+Section: python
+Priority: optional
+Maintainer: Andrew Beeman, support@kiendeleo.com
+Build-Depends: debhelper (>= 7),
+               python (>= 2.7),
+               python-dev,
+               build-essential 
+
+Standards-Version: 3.9.2
+X-Python-Version: >= 2.6
+
+Package: Raspberry-Pi-Fan-Controller
+Architecture: all
+Section: python
+Depends: python (>= 2.7)
+Description: This program controls fans based on temperature.
+This program runs on a raspberry pi to control a couple fans, based on the temperature readings it takes with a sensor. 
