@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#This script makes the program autorun on startup, and This script must be
+#This script makes the program autorun on startup. This script must be
 #run with sudo.
 
 #check if run with sudo
