@@ -35,8 +35,7 @@ class FanController:
         #this is a dictionary of values
         self.variables = {
             "tempSensor":23,
-            "fan1":11,
-            "fan2":13,
+            "fanPinList":[11, 13],
             "lowTemp":75,
             "highTemp":85,
             "checkDelay":60, #seconds
@@ -50,7 +49,7 @@ class FanController:
         
             #make sure there's a line and it's not a comment
             if (len(myLine) > 0 and myLine[0] != "#"):
-                #if there are any inline comments, take them off
+                #remove the semicolon and everything after it
                 myLine = myLine.split(";")[0].strip()
                 #split the string over the '='
                 pair = myLine.split("=") 
@@ -63,7 +62,12 @@ class FanController:
                     #print(varName, value)
                     #if the variable exists, set it
                     if varName in self.variables:
-                        self.variables[varName] = int(value)
+                        #if the variable is the pin list, parse the list
+                        if (varName == "fanPinList"):
+                            self.variables[varName] = [int(i) for i in value.strip().split()]
+                        #otherwise, just grab the value
+                        else:
+                            self.variables[varName] = int(value)
         print("closing config file...")
         configFile.close()
         
@@ -85,17 +89,25 @@ class FanController:
 
     #this gets the value of the sensor
     def getTemp(self):
-        # while True:
-        #     print(self.GPIO.input(self.variables["tempSensor"]))
         print("Obtaining temp...")
         humidity, temperature = self.Adafruit_DHT.read_retry(self.sensor, self.variables["tempSensor"])
         print("Finished obtaining temperature.")
-        temperature = (temperature * 9.0/5.0) + 32
         if humidity != None and temperature != None:
+            temperature = (temperature * 9.0/5.0) + 32
             print('Temp={0:0.1f}F, Humidity={1:0.1f}%'.format(temperature, humidity))
+            return temperature
         else:
-            print("Reading failed.")
-        return temperature
+            #if the reading failed, return a temperature above the high temperature
+            #as a fail safe so that the fans get stuck in the "on" position instead
+            #of "off"
+            print("Reading failed. Returning temperature above limit.")
+            return self.variables["highTemp"] + 1
+
+        #this is useful for testing without an actual temperature monitor.
+        # import random as r
+        # val = r.randint(self.variables["lowTemp"]-10, self.variables["highTemp"]+10)
+        # print("Random temp: %d" %val)
+        # return val
 
     #this returns true or false, based on if the fans are on or off
     def checkFans():
@@ -104,48 +116,39 @@ class FanController:
     #This turns the fans off.
     def turnFansOn(self):
         if (self.variables["reverseLogic"] == 0):
-            self.GPIO.output(self.variables["fan1"], self.GPIO.HIGH)
-            self.GPIO.output(self.variables["fan2"], self.GPIO.HIGH)
-            self.fansOn = True
+            for pin in self.variables["fanPinList"]:
+                self.GPIO.output(pin, self.GPIO.HIGH)
         else:# self.variables["reverseLogic"] == 1:
-            self.GPIO.output(self.variables["fan1"], self.GPIO.LOW)
-            self.GPIO.output(self.variables["fan2"], self.GPIO.LOW)
-            self.fansOn = True
+            for pin in self.variables["fanPinList"]:
+                self.GPIO.output(pin, self.GPIO.LOW)
+        self.fansOn = True
         print("Fans turned on.")
 
 
     #This turns the fans on.
     def turnFansOff(self):
         if (self.variables["reverseLogic"] == 0):
-            self.GPIO.output(self.variables["fan1"], self.GPIO.LOW)
-            self.GPIO.output(self.variables["fan2"], self.GPIO.LOW)
-            self.fansOn = False
-        else:# self.variables["reverseLogic"] == 1
-            self.GPIO.output(self.variables["fan1"], self.GPIO.HIGH)
-            self.GPIO.output(self.variables["fan2"], self.GPIO.HIGH)
+            for pin in self.variables["fanPinList"]:
+                self.GPIO.output(pin, self.GPIO.LOW)
+        else:# self.variables["reverseLogic"] == 1:
+            for pin in self.variables["fanPinList"]:
+                self.GPIO.output(pin, self.GPIO.HIGH)
             self.fansOn = False
         print("Fans turned off.")
         
     def initFans(self):
         print("Initializing fans...")
+        pin = 0
+        errorCount = 0
         try:
-            self.GPIO.setup(self.variables["fan1"], self.GPIO.OUT)
+            for pin in self.variables["fanPinList"]:
+                self.GPIO.setup(pin, self.GPIO.OUT)
         except:
-            print("Error: Fan on pin %d failed to initialize." %self.variables["fan1"])
-            exit(1)
-        try:
-            self.GPIO.setup(self.variables["fan2"], self.GPIO.OUT)
-        except:
-            print("Error: Fan on pin %d failed to initialize." %self.variables["fan2"])
+            print("Error: Fan on pin %d failed to initialize." %pin)
+            errorCount += 1
+        if (errorCount > 0):
             exit(1)
         self.turnFansOff()
-
-        # if (self.variables["reverseLogic"] == 0):
-        #     self.GPIO.setup(self.variables["fan1"], self.GPIO.OUT, inital=self.GPIO.HIGH)
-        #     self.GPIO.setup(self.variables["fan2"], self.GPIO.OUT, inital=self.GPIO.HIGH)
-        # if (self.variables["reverseLogic"] == 1):
-        #     self.GPIO.setup(self.variables["fan1"], self.GPIO.OUT, inital=self.GPIO.LOW)
-        #     self.GPIO.setup(self.variables["fan2"], self.GPIO.OUT, inital=self.GPIO.LOW)
 
     
     #This starts the monitoring
@@ -176,8 +179,8 @@ class FanController:
 
 #The main function of this program. Mainly used for testing.
 def main():
-    print("\n\nWARNING: This program does not to actual temperature readings.\n\n")
     f = FanController()
+
     f.start()
 
 
